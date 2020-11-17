@@ -13,7 +13,7 @@ import 'package:fyp_app/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(auditApp);
+    await tester.pumpWidget(AuditApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
