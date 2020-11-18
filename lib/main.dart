@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'RecordingScreen.dart';
 import 'SettingsScreen.dart';
 import 'TracksScreen.dart';
 import 'package:file_picker/file_picker.dart';
@@ -65,7 +66,7 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TracksScreen()),
+                    MaterialPageRoute(builder: (context) => RecordingScreen()),
                   );
                 }, // todo: record audio
                 child: Text('Record'),
