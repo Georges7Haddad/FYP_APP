@@ -11,16 +11,13 @@ void initializeAudio(audioPath) async {
   audioPath =
       audioPath.replaceRange(audioPath.length - 4, audioPath.length, "");
   var songDetails = audioPath.split('-');
-  try {
-    songDetails[1] = songDetails[1];
-  } on RangeError catch (_) {
+  if (songDetails.length == 1) {
     songDetails.add(songDetails[0]);
     songDetails[0] = "";
   }
   audio.updateMetas(
       title: songDetails[1],
       artist: songDetails[0],
-      // album: "Continuum",
       image: MetasImage.network(
           "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/55f3c884-c0b1-4c93-8c44-6672fc24d25e/d1cws6j-9d889956-85ac-4064-9770-a0ec0c628905.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOiIsImlzcyI6InVybjphcHA6Iiwib2JqIjpbW3sicGF0aCI6IlwvZlwvNTVmM2M4ODQtYzBiMS00YzkzLThjNDQtNjY3MmZjMjRkMjVlXC9kMWN3czZqLTlkODg5OTU2LTg1YWMtNDA2NC05NzcwLWEwZWMwYzYyODkwNS5qcGcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.nhqcdtd0PXLT1frWkwtA5HAjUD6OB-2NoZnq7NaEasM"));
 
