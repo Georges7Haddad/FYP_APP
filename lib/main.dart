@@ -1,5 +1,3 @@
-// import 'dart:io';
-// import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'SettingsScreen.dart';
@@ -110,9 +108,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-// Future<FilePickerResult> _openFileExplorer() async {
-//   FilePickerResult result =
-//       await FilePicker.platform.pickFiles(type: FileType.any);
-//   return result;
-// }

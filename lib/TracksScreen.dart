@@ -70,19 +70,14 @@ class _TracksScreenState extends State<TracksScreen> {
         ),
         body: assetsAudioPlayer.builderIsPlaying(
           builder: (context, isPlaying) {
-            return Column(
-              children: [
-                RaisedButton(
-                    //child:
-                    child: Text(
-                      isPlaying ? "pause" : "play",
-                    ),
-                    onPressed: () {
-                      assetsAudioPlayer.playOrPause();
-                      setState(() {});
-                    }),
-              ],
-            );
+            return RaisedButton(
+                child: Text(
+                  isPlaying ? "pause" : "play",
+                ),
+                onPressed: () {
+                  assetsAudioPlayer.playOrPause();
+                  setState(() {});
+                });
           },
         ));
   }

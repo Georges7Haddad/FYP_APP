@@ -34,7 +34,7 @@ class ThemeController extends GetxController {
   }
 }
 
-bool dark_theme_on = ThemeController._themeMode == ThemeMode.dark ? true : false;
+bool darkThemeOn = ThemeController._themeMode == ThemeMode.dark ? true : false;
 
 ThemeData darkTheme = ThemeData(
     primarySwatch: Colors.blueGrey,
@@ -68,12 +68,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               future: SharedPreferences.getInstance(),
               builder: (context, snapshot) {
                 return Switch(
-                  value: dark_theme_on,
+                  value: darkThemeOn,
                   onChanged: (toggle) {
                     setState(() {
-                      dark_theme_on = toggle;
+                      darkThemeOn = toggle;
                       ThemeController.to.setThemeMode(
-                          dark_theme_on ? ThemeMode.dark : ThemeMode.light);
+                          darkThemeOn ? ThemeMode.dark : ThemeMode.light);
                     });
                   },
                   activeTrackColor: Colors.lightGreenAccent,
