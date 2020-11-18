@@ -61,12 +61,16 @@ class RecordingScreenState extends State<RecordingScreen> {
             child: new Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: <Widget>[
+                  new Text("${_current?.duration.toString().split(".")[0]}",
+                      style: TextStyle(fontSize: 40, color: Colors.green)),
                   new Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: new FlatButton(
+                        child: new FloatingActionButton(
+                          heroTag: "B2",
+                          child: _buildRecordIcon(_currentStatus),
                           onPressed: () {
                             switch (_currentStatus) {
                               case RecordingStatus.Initialized:
@@ -93,51 +97,64 @@ class RecordingScreenState extends State<RecordingScreen> {
                                 break;
                             }
                           },
-                          child: _buildText(_currentStatus),
-                          color: Colors.lightBlue,
+                          backgroundColor: Colors.white,
                         ),
                       ),
-                      new FlatButton(
+                      new SizedBox(
+                        width: 50,
+                      ),
+                      new FloatingActionButton(
+                        heroTag: "B1",
+                        child: _buildStopIcon(_currentStatus),
                         onPressed: _currentStatus != RecordingStatus.Unset
                             ? _stop
                             : null,
-                        child: new Text("Stop",
-                            style: TextStyle(color: Colors.white)),
-                        color: Colors.blueAccent.withOpacity(0.5),
+                        backgroundColor: Colors.white,
                       ),
-                      SizedBox(
-                        width: 8,
-                      ),
-                      assetsAudioPlayer.builderIsPlaying(
-                        builder: (context, isPlaying) {
-                          return RaisedButton(
-                              child: Text(
-                                isPlaying ? "pause" : "play",
-                              ),
-                              onPressed: () {
-                                assetsAudioPlayer.playOrPause();
-                                setState(() {});
-                              });
-                        },
-                      ),
-                      RaisedButton(
-                          child: Text("Submit"),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => TracksScreen(audioPath: _current.path)),
-                            );
-                            setState(() {});
-                          }),
                     ],
                   ),
-                  new Text(
-                    "Status : $_currentStatus",
-                    style: TextStyle(fontSize: 15, color: Colors.green),
+                  assetsAudioPlayer.builderIsPlaying(
+                    builder: (context, isPlaying) {
+                      return ElevatedButton(
+                        child: Text(
+                          isPlaying ? "pause" : "play",
+                        ),
+                        onPressed: () {
+                          assetsAudioPlayer.playOrPause();
+                          setState(() {});
+                        },
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.all<Color>(Colors.green),
+                          shape: MaterialStateProperty.all<OutlinedBorder>(
+                              StadiumBorder()),
+                          minimumSize: MaterialStateProperty.all<Size>(
+                            Size(130, 40),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  new Text(
-                      "Audio recording duration : ${_current?.duration.toString()}",
-                      style: TextStyle(fontSize: 15, color: Colors.green))
+                  ElevatedButton(
+                      child: Text('Process Recording'),
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all<Color>(Colors.green),
+                        shape: MaterialStateProperty.all<OutlinedBorder>(
+                            StadiumBorder()),
+                        minimumSize: MaterialStateProperty.all<Size>(
+                          Size(130, 40),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  TracksScreen(audioPath: _current.path)),
+                        );
+                        setState(() {});
+                      }),
                 ]),
           ),
         ));
@@ -223,39 +240,39 @@ class RecordingScreenState extends State<RecordingScreen> {
     });
   }
 
-  Widget _buildText(RecordingStatus status) {
-    var text = "";
+  // Update the record icon based on the recording status
+  Widget _buildRecordIcon(RecordingStatus status) {
+    var icon2 = Icons.fiber_manual_record_rounded;
     switch (_currentStatus) {
       case RecordingStatus.Initialized:
-        {
-          text = 'Start';
-          break;
-        }
+        break;
       case RecordingStatus.Recording:
-        {
-          text = 'Pause';
-          break;
-        }
+        icon2 = Icons.pause;
+        break;
       case RecordingStatus.Paused:
-        {
-          text = 'Resume';
-          break;
-        }
+        icon2 = Icons.play_circle_fill;
+        break;
       case RecordingStatus.Stopped:
-        {
-          text = 'Init';
-          break;
-        }
+        icon2 = Icons.fiber_new_outlined;
+        break;
       default:
         break;
     }
-    return Text(text, style: TextStyle(color: Colors.white));
+    return Icon(icon2, size: 40, color: Colors.green);
   }
 
-// todo: I cant listen back to the audio more than once(audioPath is always correct)
-// todo: when I need to record again, it saves the file but doesn't play it back (i think first issue solves this one too)
+  // Update the stop icon color to show if recording
+  Widget _buildStopIcon(RecordingStatus status) {
+    if (_currentStatus == RecordingStatus.Initialized ||
+        _currentStatus == RecordingStatus.Stopped ||
+        _currentStatus == RecordingStatus.Paused)
+      return Icon(Icons.stop_rounded, size: 35, color: Colors.blueGrey);
+    return Icon(Icons.stop_rounded, size: 35, color: Colors.green);
+  }
+
 // todo: If we click on back music should stop
 // todo: Add audio format specification in settings
+  // Initializing audio so the user can hear their recording
   void initializeAudio() async {
     var audioPath = _current.path;
     final audio = Audio.file(audioPath);
@@ -271,6 +288,5 @@ class RecordingScreenState extends State<RecordingScreen> {
         notificationSettings: NotificationSettings(
           nextEnabled: false,
         ));
-    assetsAudioPlayer.pause();
   }
 }
