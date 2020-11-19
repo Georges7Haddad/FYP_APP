@@ -5,6 +5,9 @@ import 'SettingsScreen.dart';
 import 'TracksScreen.dart';
 import 'package:file_picker/file_picker.dart';
 
+// todo: If we click on back music should stop
+// todo: Handle user not importing a song
+// todo: Add audio format specification in settings
 void main() {
   Get.lazyPut<ThemeController>(() => ThemeController());
   runApp(AuditApp());

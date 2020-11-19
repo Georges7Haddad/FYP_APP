@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_audio_recorder/flutter_audio_recorder.dart';
 import 'package:fyp_app/TracksScreen.dart';
 import 'package:path_provider/path_provider.dart';
-
 import 'SettingsScreen.dart';
 
 final assetsAudioPlayer = AssetsAudioPlayer();
@@ -68,56 +67,62 @@ class RecordingScreenState extends State<RecordingScreen> {
                     children: <Widget>[
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: new FloatingActionButton(
-                          heroTag: "B2",
-                          child: _buildRecordIcon(_currentStatus),
-                          onPressed: () {
-                            switch (_currentStatus) {
-                              case RecordingStatus.Initialized:
-                                {
-                                  _start();
-                                  break;
+                        child: Container(
+                            height: 80.0,
+                            width: 80.0,
+                            child: new FloatingActionButton(
+                              heroTag: "B2",
+                              child: _buildRecordIcon(_currentStatus),
+                              onPressed: () {
+                                switch (_currentStatus) {
+                                  case RecordingStatus.Initialized:
+                                    {
+                                      _start();
+                                      break;
+                                    }
+                                  case RecordingStatus.Recording:
+                                    {
+                                      _pause();
+                                      break;
+                                    }
+                                  case RecordingStatus.Paused:
+                                    {
+                                      _resume();
+                                      break;
+                                    }
+                                  case RecordingStatus.Stopped:
+                                    {
+                                      _init();
+                                      break;
+                                    }
+                                  default:
+                                    break;
                                 }
-                              case RecordingStatus.Recording:
-                                {
-                                  _pause();
-                                  break;
-                                }
-                              case RecordingStatus.Paused:
-                                {
-                                  _resume();
-                                  break;
-                                }
-                              case RecordingStatus.Stopped:
-                                {
-                                  _init();
-                                  break;
-                                }
-                              default:
-                                break;
-                            }
-                          },
-                          backgroundColor: Colors.white,
-                        ),
+                              },
+                              backgroundColor: Colors.white,
+                            )),
                       ),
                       new SizedBox(
                         width: 50,
                       ),
-                      new FloatingActionButton(
-                        heroTag: "B1",
-                        child: _buildStopIcon(_currentStatus),
-                        onPressed: _currentStatus != RecordingStatus.Unset
-                            ? _stop
-                            : null,
-                        backgroundColor: Colors.white,
-                      ),
+                      Container(
+                          height: 80.0,
+                          width: 80.0,
+                          child: new FloatingActionButton(
+                            heroTag: "B1",
+                            child: _buildStopIcon(_currentStatus),
+                            onPressed: _currentStatus != RecordingStatus.Unset
+                                ? _stop
+                                : null,
+                            backgroundColor: Colors.white,
+                          )),
                     ],
                   ),
                   assetsAudioPlayer.builderIsPlaying(
                     builder: (context, isPlaying) {
                       return ElevatedButton(
                         child: Text(
-                          isPlaying ? "pause" : "play",
+                          isPlaying ? "Pause" : "Play",
                         ),
                         onPressed: () {
                           assetsAudioPlayer.playOrPause();
@@ -250,7 +255,7 @@ class RecordingScreenState extends State<RecordingScreen> {
         icon2 = Icons.pause;
         break;
       case RecordingStatus.Paused:
-        icon2 = Icons.play_circle_fill;
+        icon2 = Icons.play_arrow_rounded;
         break;
       case RecordingStatus.Stopped:
         icon2 = Icons.fiber_new_outlined;
@@ -258,7 +263,7 @@ class RecordingScreenState extends State<RecordingScreen> {
       default:
         break;
     }
-    return Icon(icon2, size: 40, color: Colors.green);
+    return Icon(icon2, size: 50, color: Colors.green);
   }
 
   // Update the stop icon color to show if recording
@@ -266,12 +271,10 @@ class RecordingScreenState extends State<RecordingScreen> {
     if (_currentStatus == RecordingStatus.Initialized ||
         _currentStatus == RecordingStatus.Stopped ||
         _currentStatus == RecordingStatus.Paused)
-      return Icon(Icons.stop_rounded, size: 35, color: Colors.blueGrey);
-    return Icon(Icons.stop_rounded, size: 35, color: Colors.green);
+      return Icon(Icons.stop_rounded, size: 50, color: Colors.blueGrey);
+    return Icon(Icons.stop_rounded, size: 50, color: Colors.green);
   }
 
-// todo: If we click on back music should stop
-// todo: Add audio format specification in settings
   // Initializing audio so the user can hear their recording
   void initializeAudio() async {
     var audioPath = _current.path;
@@ -284,6 +287,8 @@ class RecordingScreenState extends State<RecordingScreen> {
             "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/55f3c884-c0b1-4c93-8c44-6672fc24d25e/d1cws6j-9d889956-85ac-4064-9770-a0ec0c628905.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOiIsImlzcyI6InVybjphcHA6Iiwib2JqIjpbW3sicGF0aCI6IlwvZlwvNTVmM2M4ODQtYzBiMS00YzkzLThjNDQtNjY3MmZjMjRkMjVlXC9kMWN3czZqLTlkODg5OTU2LTg1YWMtNDA2NC05NzcwLWEwZWMwYzYyODkwNS5qcGcifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6ZmlsZS5kb3dubG9hZCJdfQ.nhqcdtd0PXLT1frWkwtA5HAjUD6OB-2NoZnq7NaEasM"));
 
     assetsAudioPlayer.open(audio,
+        autoStart: false,
+        headPhoneStrategy: HeadPhoneStrategy.pauseOnUnplug,
         showNotification: true,
         notificationSettings: NotificationSettings(
           nextEnabled: false,
