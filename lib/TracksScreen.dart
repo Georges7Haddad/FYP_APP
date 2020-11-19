@@ -41,8 +41,6 @@ class TracksScreen extends StatefulWidget {
 }
 
 class _TracksScreenState extends State<TracksScreen> {
-  double _currentSliderValue = 0;
-
   @override
   void initState() {
     initializeAudio(widget.audioPath);
@@ -82,9 +80,6 @@ class _TracksScreenState extends State<TracksScreen> {
               }
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
-              double _currentSliderValue = currentTimeInSeconds == null
-                  ? currentTimeInSeconds / infos.duration.inSeconds
-                  : infos.duration.inSeconds.toDouble();
               return Column(
                 children: [
                   Row(children: [
@@ -112,7 +107,6 @@ class _TracksScreenState extends State<TracksScreen> {
                     inactiveColor: Colors.grey,
                     onChanged: (double value) {
                       setState(() {
-                        _currentSliderValue = value;
                         assetsAudioPlayer
                             .seek(Duration(seconds: value.toInt()));
                       });
