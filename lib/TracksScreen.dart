@@ -53,6 +53,13 @@ class _TracksScreenState extends State<TracksScreen> {
       appBar: AppBar(
         title: Text('Audit'),
         centerTitle: true,
+        leading: new IconButton(
+          icon: new Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+            assetsAudioPlayer.stop();
+          },
+        ),
         actions: <Widget>[
           IconButton(
             icon: Icon(
@@ -116,7 +123,7 @@ class _TracksScreenState extends State<TracksScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
-                        child: Icon(Icons.fast_rewind_sharp),
+                        child: Icon(Icons.replay_10),
                         onPressed: () {
                           assetsAudioPlayer.seekBy(Duration(seconds: -10));
                         },
@@ -147,7 +154,7 @@ class _TracksScreenState extends State<TracksScreen> {
                         width: 12,
                       ),
                       ElevatedButton(
-                        child: Icon(Icons.fast_forward_sharp),
+                        child: Icon(Icons.forward_10),
                         onPressed: () {
                           assetsAudioPlayer.seekBy(Duration(seconds: 10));
                         },

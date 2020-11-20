@@ -39,6 +39,13 @@ class RecordingScreenState extends State<RecordingScreen> {
         appBar: AppBar(
           title: Text('Audit'),
           centerTitle: true,
+          leading: new IconButton(
+            icon: new Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+              assetsAudioPlayer.stop();
+            },
+          ),
           actions: <Widget>[
             IconButton(
               icon: Icon(
@@ -263,7 +270,7 @@ class RecordingScreenState extends State<RecordingScreen> {
       default:
         break;
     }
-    return Icon(icon2, size: 50, color: Colors.green);
+    return Icon(icon2, size: 50, color: Colors.red);
   }
 
   // Update the stop icon color to show if recording
@@ -272,7 +279,7 @@ class RecordingScreenState extends State<RecordingScreen> {
         _currentStatus == RecordingStatus.Stopped ||
         _currentStatus == RecordingStatus.Paused)
       return Icon(Icons.stop_rounded, size: 50, color: Colors.blueGrey);
-    return Icon(Icons.stop_rounded, size: 50, color: Colors.green);
+    return Icon(Icons.stop_rounded, size: 50, color: Colors.red);
   }
 
   // Initializing audio so the user can hear their recording
