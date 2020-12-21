@@ -5,9 +5,9 @@ import 'SettingsScreen.dart';
 import 'TracksScreen.dart';
 import 'package:file_picker/file_picker.dart';
 
-// todo: If we click on back music should stop
 // todo: Handle user not importing a song
 // todo: Add audio format specification in settings
+// todo: Native android back button stop music
 void main() {
   Get.lazyPut<ThemeController>(() => ThemeController());
   runApp(AuditApp());
@@ -88,7 +88,7 @@ class HomeScreen extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  final String path = await FilePicker.getFilePath(type: FileType.audio);
+                  final String path = await FilePicker.getFilePath(type: FileType.any);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => TracksScreen(audioPath: path,)),
