@@ -150,14 +150,14 @@ packages:
     source: hosted
     version: "3.13.2"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.12.2"
   http_parser:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http_parser
       url: "https://pub.dartlang.org"
@@ -197,7 +197,7 @@ packages:
       name: path_provider
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.6.24"
+    version: "1.6.27"
   path_provider_linux:
     dependency: transitive
     description:
