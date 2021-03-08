@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 // todo: Handle user not importing a song
 // todo: Add audio format specification in settings
 // todo: Native android back button stop music
+// todo: IOS music player slider
 void main() {
   Get.lazyPut<ThemeController>(() => ThemeController());
   runApp(AuditApp());

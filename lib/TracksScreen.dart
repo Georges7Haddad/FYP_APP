@@ -10,14 +10,31 @@ import 'package:http/http.dart' as http;
 final originalTrackPlayer = AssetsAudioPlayer.newPlayer();
 final vocalsTrackPlayer = AssetsAudioPlayer.newPlayer();
 final drumsTrackPlayer = AssetsAudioPlayer.newPlayer();
+final pianoTrackPlayer = AssetsAudioPlayer.newPlayer();
+final bassTrackPlayer = AssetsAudioPlayer.newPlayer();
+final otherTrackPlayer = AssetsAudioPlayer.newPlayer();
+
+openTrackInPlayer(trackPlayer, filePath) {
+  try {
+    trackPlayer.open(Audio.file(filePath),
+        autoStart: false,
+        headPhoneStrategy: HeadPhoneStrategy.pauseOnUnplug,
+        showNotification: true,
+        notificationSettings: NotificationSettings(
+          nextEnabled: false,
+        ));
+  } catch (t) {
+    print(t.toString());
+  }
+}
 
 Future<http.Response> splitAudio(String audioPath) async {
   // Set URI
   var uri;
   if (io.Platform.isIOS) {
-    uri = Uri.parse('http://127.0.0.1:8000/api/split/');
+    uri = 'http://127.0.0.1:8000/api/';
   } else {
-    uri = Uri.parse('http://10.0.2.2:8000/api/split/');
+    uri = 'http://10.0.2.2:8000/api/';
   }
 
   // Original Track File Bytes
@@ -25,51 +42,45 @@ Future<http.Response> splitAudio(String audioPath) async {
 
   // Set File Path
   io.Directory appDocDirectory = await getTemporaryDirectory();
-  // Vocals File
-  var vocalsFilePath = appDocDirectory.path + "/vocals.mp3";
+  // Initialize Files
+  var vocalsFilePath = appDocDirectory.path + "/vocals.wav";
   var vocalsFile = io.File(vocalsFilePath);
-  // Drums File
-  var drumsFilePath = appDocDirectory.path + "/drums.mp3";
+  var drumsFilePath = appDocDirectory.path + "/drums.wav";
   var drumsFile = io.File(drumsFilePath);
+  var pianoFilePath = appDocDirectory.path + "/piano.wav";
+  var pianoFile = io.File(pianoFilePath);
+  var bassFilePath = appDocDirectory.path + "/bass.wav";
+  var bassFile = io.File(bassFilePath);
+  var otherFilePath = appDocDirectory.path + "/other.wav";
+  var otherFile = io.File(otherFilePath);
 
   // Post Original Track + Get Vocals Track
-  var request = http.MultipartRequest('POST', uri)
+  var request = http.MultipartRequest('POST', Uri.parse(uri + 'split/'))
     ..files.add(http.MultipartFile.fromBytes("file", originalFileBytes,
         filename: "file", contentType: MediaType('audio', 'mpeg')));
   var streamResponse = await request.send();
-  var vocalsResponse = await http.Response.fromStream(streamResponse);
 
-  // Get Drums Track
-  var drumsResponse = await http.get(uri);
+  // Get Tracks
+  var vocalsResponse = await http.get(Uri.parse(uri + 'vocals/'));
+  var drumsResponse = await http.get(Uri.parse(uri + 'drums/'));
+  var pianoResponse = await http.get(Uri.parse(uri + 'piano/'));
+  var bassResponse = await http.get(Uri.parse(uri + 'bass/'));
+  var otherResponse = await http.get(Uri.parse(uri + 'other/'));
 
   // Write response files
   vocalsFile.writeAsBytesSync(vocalsResponse.bodyBytes);
   drumsFile.writeAsBytesSync(drumsResponse.bodyBytes);
+  pianoFile.writeAsBytesSync(pianoResponse.bodyBytes);
+  bassFile.writeAsBytesSync(bassResponse.bodyBytes);
+  otherFile.writeAsBytesSync(otherResponse.bodyBytes);
 
-  // Setting audio player
-  if (streamResponse.statusCode == 201 && drumsResponse.statusCode == 200) {
-    try {
-      vocalsTrackPlayer.open(Audio.file(vocalsFilePath),
-          autoStart: false,
-          headPhoneStrategy: HeadPhoneStrategy.pauseOnUnplug,
-          showNotification: true,
-          notificationSettings: NotificationSettings(
-            nextEnabled: false,
-          ));
-    } catch (t) {
-      print(t.toString());
-    }
-    try {
-      drumsTrackPlayer.open(Audio.file(drumsFilePath),
-          autoStart: false,
-          headPhoneStrategy: HeadPhoneStrategy.pauseOnUnplug,
-          showNotification: true,
-          notificationSettings: NotificationSettings(
-            nextEnabled: false,
-          ));
-    } catch (t) {
-      print(t.toString());
-    }
+  // Setting audio players
+  if (streamResponse.statusCode == 201) {
+    openTrackInPlayer(vocalsTrackPlayer, vocalsFilePath);
+    openTrackInPlayer(drumsTrackPlayer, drumsFilePath);
+    openTrackInPlayer(pianoTrackPlayer, pianoFilePath);
+    openTrackInPlayer(bassTrackPlayer, bassFilePath);
+    openTrackInPlayer(otherTrackPlayer, otherFilePath);
   } else {
     throw Exception('Failed to split Track');
   }
@@ -131,6 +142,9 @@ class _TracksScreenState extends State<TracksScreen> {
             originalTrackPlayer.stop();
             vocalsTrackPlayer.stop();
             drumsTrackPlayer.stop();
+            pianoTrackPlayer.stop();
+            bassTrackPlayer.stop();
+            otherTrackPlayer.stop();
           },
         ),
         actions: <Widget>[
@@ -148,11 +162,15 @@ class _TracksScreenState extends State<TracksScreen> {
           )
         ],
       ),
-      body: Center(
+      body: SingleChildScrollView(
           child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+            SizedBox(
+              height: 30,
+            ),
             // Original Track Player
             originalTrackPlayer.builderRealtimePlayingInfos(
                 builder: (context, infos) {
@@ -186,6 +204,39 @@ class _TracksScreenState extends State<TracksScreen> {
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
               return playerBuilder(drumsTrackPlayer, infos,
                   currentTimeInSeconds, "  Drums Track");
+            }),
+            // Vocals Track Player
+            pianoTrackPlayer.builderRealtimePlayingInfos(
+                builder: (context, infos) {
+              if (infos == null) {
+                return SizedBox();
+              }
+              var currentTimeInSeconds = int.parse(
+                  infos.currentPosition.inSeconds.toString().split(".")[0]);
+              return playerBuilder(pianoTrackPlayer, infos,
+                  currentTimeInSeconds, "  Piano Track");
+            }),
+            // Vocals Track Player
+            bassTrackPlayer.builderRealtimePlayingInfos(
+                builder: (context, infos) {
+              if (infos == null) {
+                return SizedBox();
+              }
+              var currentTimeInSeconds = int.parse(
+                  infos.currentPosition.inSeconds.toString().split(".")[0]);
+              return playerBuilder(
+                  bassTrackPlayer, infos, currentTimeInSeconds, "  Bass Track");
+            }),
+            // Vocals Track Player
+            otherTrackPlayer.builderRealtimePlayingInfos(
+                builder: (context, infos) {
+              if (infos == null) {
+                return SizedBox();
+              }
+              var currentTimeInSeconds = int.parse(
+                  infos.currentPosition.inSeconds.toString().split(".")[0]);
+              return playerBuilder(otherTrackPlayer, infos,
+                  currentTimeInSeconds, "  Other Track");
             }),
           ])),
     );
