@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' as io;
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,16 @@ final drumsTrackPlayer = AssetsAudioPlayer.newPlayer();
 final pianoTrackPlayer = AssetsAudioPlayer.newPlayer();
 final bassTrackPlayer = AssetsAudioPlayer.newPlayer();
 final otherTrackPlayer = AssetsAudioPlayer.newPlayer();
+var uri;
+var rand;
+Future myFuture;
+var playerMap = {
+  "vocals": vocalsTrackPlayer,
+  "drums": drumsTrackPlayer,
+  "piano": pianoTrackPlayer,
+  "bass": bassTrackPlayer,
+  "other": otherTrackPlayer,
+};
 
 openTrackInPlayer(trackPlayer, filePath) {
   try {
@@ -28,61 +39,46 @@ openTrackInPlayer(trackPlayer, filePath) {
   }
 }
 
-Future<http.Response> splitAudio(String audioPath) async {
-  // Set URI
-  var uri;
+setUri() {
   if (io.Platform.isIOS) {
     uri = 'http://127.0.0.1:8000/api/';
   } else {
     uri = 'http://10.0.2.2:8000/api/';
   }
+}
 
+Future<http.Response> sendOriginalTrack(String audioPath) async {
   // Original Track File Bytes
   var originalFileBytes = io.File(audioPath).readAsBytesSync();
-
-  // Set File Path
-  io.Directory appDocDirectory = await getTemporaryDirectory();
-  // Initialize Files
-  var vocalsFilePath = appDocDirectory.path + "/vocals.wav";
-  var vocalsFile = io.File(vocalsFilePath);
-  var drumsFilePath = appDocDirectory.path + "/drums.wav";
-  var drumsFile = io.File(drumsFilePath);
-  var pianoFilePath = appDocDirectory.path + "/piano.wav";
-  var pianoFile = io.File(pianoFilePath);
-  var bassFilePath = appDocDirectory.path + "/bass.wav";
-  var bassFile = io.File(bassFilePath);
-  var otherFilePath = appDocDirectory.path + "/other.wav";
-  var otherFile = io.File(otherFilePath);
 
   // Post Original Track + Get Vocals Track
   var request = http.MultipartRequest('POST', Uri.parse(uri + 'split/'))
     ..files.add(http.MultipartFile.fromBytes("file", originalFileBytes,
         filename: "file", contentType: MediaType('audio', 'mpeg')));
   var streamResponse = await request.send();
+  final bodyStr = await streamResponse.stream.bytesToString();
+  var valueMap = json.decode(bodyStr);
+  rand = valueMap["rand"];
+}
+
+Future<http.Response> getTrack(instrument) async {
+  // Set File Path
+  io.Directory appDocDirectory = await getTemporaryDirectory();
+  // Initialize Files
+  var filePath = appDocDirectory.path + "/$instrument.wav";
+  var file = io.File(filePath);
 
   // Get Tracks
-  var vocalsResponse = await http.get(Uri.parse(uri + 'vocals/'));
-  var drumsResponse = await http.get(Uri.parse(uri + 'drums/'));
-  var pianoResponse = await http.get(Uri.parse(uri + 'piano/'));
-  var bassResponse = await http.get(Uri.parse(uri + 'bass/'));
-  var otherResponse = await http.get(Uri.parse(uri + 'other/'));
+  var response = await http.get(Uri.parse(uri + '$instrument/$rand/'));
 
   // Write response files
-  vocalsFile.writeAsBytesSync(vocalsResponse.bodyBytes);
-  drumsFile.writeAsBytesSync(drumsResponse.bodyBytes);
-  pianoFile.writeAsBytesSync(pianoResponse.bodyBytes);
-  bassFile.writeAsBytesSync(bassResponse.bodyBytes);
-  otherFile.writeAsBytesSync(otherResponse.bodyBytes);
+  file.writeAsBytesSync(response.bodyBytes);
 
   // Setting audio players
-  if (streamResponse.statusCode == 201) {
-    openTrackInPlayer(vocalsTrackPlayer, vocalsFilePath);
-    openTrackInPlayer(drumsTrackPlayer, drumsFilePath);
-    openTrackInPlayer(pianoTrackPlayer, pianoFilePath);
-    openTrackInPlayer(bassTrackPlayer, bassFilePath);
-    openTrackInPlayer(otherTrackPlayer, otherFilePath);
+  openTrackInPlayer(playerMap[instrument], filePath);
+  if (response.statusCode == 200) {
   } else {
-    throw Exception('Failed to split Track');
+    throw Exception('Failed to get $instrument track');
   }
 }
 
@@ -124,52 +120,59 @@ class TracksScreen extends StatefulWidget {
 class _TracksScreenState extends State<TracksScreen> {
   @override
   void initState() {
+    setUri();
     super.initState();
     initializeOriginalTrack(widget.audioPath);
-    splitAudio(widget.audioPath);
+    myFuture = sendOriginalTrack(widget.audioPath);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Audit'),
-        centerTitle: true,
-        leading: new IconButton(
-          icon: new Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-            originalTrackPlayer.stop();
-            vocalsTrackPlayer.stop();
-            drumsTrackPlayer.stop();
-            pianoTrackPlayer.stop();
-            bassTrackPlayer.stop();
-            otherTrackPlayer.stop();
-          },
-        ),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(
-              Icons.settings,
-              color: Colors.white,
-            ),
+        appBar: AppBar(
+          title: Text('Audit'),
+          centerTitle: true,
+          leading: new IconButton(
+            icon: new Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SettingsScreen()),
-              );
+              Navigator.of(context).pop();
+              originalTrackPlayer.stop();
+              vocalsTrackPlayer.stop();
+              drumsTrackPlayer.stop();
+              pianoTrackPlayer.stop();
+              bassTrackPlayer.stop();
+              otherTrackPlayer.stop();
             },
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          ),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(
+                Icons.settings,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SettingsScreen()),
+                );
+              },
+            )
+          ],
+        ),
+        body: SingleChildScrollView(
+            child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
             SizedBox(
               height: 30,
+            ),
+            Center(
+              child: Text(
+                "Original Track",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
             ),
             // Original Track Player
             originalTrackPlayer.builderRealtimePlayingInfos(
@@ -179,10 +182,10 @@ class _TracksScreenState extends State<TracksScreen> {
               }
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
-              return playerBuilder(originalTrackPlayer, infos,
-                  currentTimeInSeconds, "Original Track");
+              return playerBuilder(
+                  originalTrackPlayer, infos, currentTimeInSeconds);
             }),
-
+            buttonsBuilder("vocals"),
             // Vocals Track Player
             vocalsTrackPlayer.builderRealtimePlayingInfos(
                 builder: (context, infos) {
@@ -191,9 +194,10 @@ class _TracksScreenState extends State<TracksScreen> {
               }
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
-              return playerBuilder(vocalsTrackPlayer, infos,
-                  currentTimeInSeconds, "  Vocals Track");
+              return playerBuilder(
+                  vocalsTrackPlayer, infos, currentTimeInSeconds);
             }),
+            buttonsBuilder("drums"),
             // Drums Track Player
             drumsTrackPlayer.builderRealtimePlayingInfos(
                 builder: (context, infos) {
@@ -202,10 +206,11 @@ class _TracksScreenState extends State<TracksScreen> {
               }
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
-              return playerBuilder(drumsTrackPlayer, infos,
-                  currentTimeInSeconds, "  Drums Track");
+              return playerBuilder(
+                  drumsTrackPlayer, infos, currentTimeInSeconds);
             }),
-            // Vocals Track Player
+            buttonsBuilder("piano"),
+            // Piano Track Player
             pianoTrackPlayer.builderRealtimePlayingInfos(
                 builder: (context, infos) {
               if (infos == null) {
@@ -213,10 +218,11 @@ class _TracksScreenState extends State<TracksScreen> {
               }
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
-              return playerBuilder(pianoTrackPlayer, infos,
-                  currentTimeInSeconds, "  Piano Track");
+              return playerBuilder(
+                  pianoTrackPlayer, infos, currentTimeInSeconds);
             }),
-            // Vocals Track Player
+            buttonsBuilder("bass"),
+            // Bass Track Player
             bassTrackPlayer.builderRealtimePlayingInfos(
                 builder: (context, infos) {
               if (infos == null) {
@@ -225,9 +231,10 @@ class _TracksScreenState extends State<TracksScreen> {
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
               return playerBuilder(
-                  bassTrackPlayer, infos, currentTimeInSeconds, "  Bass Track");
+                  bassTrackPlayer, infos, currentTimeInSeconds);
             }),
-            // Vocals Track Player
+            buttonsBuilder("other"),
+            // Other Track Player
             otherTrackPlayer.builderRealtimePlayingInfos(
                 builder: (context, infos) {
               if (infos == null) {
@@ -235,14 +242,83 @@ class _TracksScreenState extends State<TracksScreen> {
               }
               var currentTimeInSeconds = int.parse(
                   infos.currentPosition.inSeconds.toString().split(".")[0]);
-              return playerBuilder(otherTrackPlayer, infos,
-                  currentTimeInSeconds, "  Other Track");
-            }),
-          ])),
-    );
+              return playerBuilder(
+                  otherTrackPlayer, infos, currentTimeInSeconds);
+            })
+          ],
+        )));
   }
 
-  playerBuilder(audioPlayer, infos, currentTimeInSeconds, trackName) {
+  buttonsBuilder(instrument) {
+    return FutureBuilder(
+        future: myFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(bottom: 15.0),
+                  child: Text(
+                    "${instrument[0].toUpperCase()}${instrument.substring(1)}",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(left: 30.0, bottom: 15.0),
+                      // width: ,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          getTrack(instrument);
+                        },
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.blueAccent),
+                        ),
+                        child: Text("Audio Track"),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 20.0, bottom: 15.0),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.green),
+                        ),
+                        child: Text("Midi Track"),
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 20.0, bottom: 15.0),
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateColor.resolveWith(
+                              (states) => Colors.blueAccent),
+                        ),
+                        child: Text("Music Sheet"),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          } else {
+            return Column(
+              children: [
+                SizedBox(
+                  height: 20,
+                ),
+                Center(child: CircularProgressIndicator())
+              ],
+            );
+          }
+        });
+  }
+
+  playerBuilder(audioPlayer, infos, currentTimeInSeconds) {
     return Column(
       children: [
         Row(children: [
@@ -251,14 +327,7 @@ class _TracksScreenState extends State<TracksScreen> {
           ),
           Text("${infos.currentPosition.toString().split(".")[0]}"),
           SizedBox(
-            width: 69,
-          ),
-          Text(
-            trackName,
-            style: TextStyle(fontSize: 20),
-          ),
-          SizedBox(
-            width: 69,
+            width: 275,
           ),
           Text("${infos.duration.toString().split(".")[0]}"),
         ]),
@@ -295,7 +364,7 @@ class _TracksScreenState extends State<TracksScreen> {
               width: 12,
             ),
             FloatingActionButton(
-                heroTag: trackName,
+                heroTag: infos.toString(),
                 backgroundColor: Colors.green,
                 child: Icon(
                   infos.isPlaying ? Icons.pause : Icons.play_arrow,
